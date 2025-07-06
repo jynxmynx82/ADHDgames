@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Master - Train Your Focus!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 800px;
+            height: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-header {
+            padding: 20px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .game-title {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-around;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .focus-meter {
+            width: 200px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        .focus-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
+            width: 100%;
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+
+        .game-area {
+            position: relative;
+            width: 100%;
+            height: 480px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .game-object {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .target {
+            border: 3px solid #fff;
+            animation: pulse 2s infinite;
+        }
+
+        .target:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .distractor {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a6f);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .distractor:hover {
+            transform: scale(0.9);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes celebration {
+            0% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.2) rotate(90deg); }
+            50% { transform: scale(1.1) rotate(180deg); }
+            75% { transform: scale(1.2) rotate(270deg); }
+            100% { transform: scale(1) rotate(360deg); }
+        }
+
+        .celebration {
+            animation: celebration 0.6s ease-in-out;
+        }
+
+        .start-screen, .game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            border-radius: 20px;
+        }
+
+        .start-button, .restart-button {
+            padding: 15px 30px;
+            font-size: 20px;
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .start-button:hover, .restart-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4);
+        }
+
+        .instructions {
+            font-size: 16px;
+            max-width: 400px;
+            line-height: 1.5;
+            margin-top: 20px;
+            opacity: 0.9;
+        }
+
+        .feedback {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-weight: bold;
+            color: #4ecdc4;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .feedback.show {
+            opacity: 1;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1 class="game-title">🌟 Star Hunter 🌟</h1>
+            <div class="game-stats">
+                <div>Stars: <span id="score">0</span></div>
+                <div>Level: <span id="level">1</span></div>
+                <div>Time: <span id="time">60</span>s</div>
+            </div>
+            <div class="focus-meter">
+                <div class="focus-fill" id="focusFill"></div>
+            </div>
+        </div>
+
+        <div class="game-area" id="gameArea">
+            <div class="feedback" id="feedback"></div>
+        </div>
+
+        <div class="start-screen" id="startScreen">
+            <h2>🎯 Welcome to Star Hunter! 🎯</h2>
+            <div class="instructions">
+                <p>Find and click the <strong>stars</strong> ⭐ to get points!</p>
+                <p>Don't click the red circles - they will trick you!</p>
+                <p>Click as many stars as you can!</p>
+                <p>Ready to hunt for stars?</p>
+            </div>
+            <button class="start-button" onclick="startGame()">🚀 Let's Play!</button>
+        </div>
+
+        <div class="game-over-screen hidden" id="gameOverScreen">
+            <h2>🎉 Great Job, Star Hunter! 🎉</h2>
+            <p>Star Count: <span id="finalScore">0</span></p>
+            <p id="encouragementMessage"></p>
+            <button class="restart-button" onclick="restartGame()">🔄 Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            score: 0,
+            level: 1,
+            timeLeft: 60,
+            isPlaying: false,
+            focusLevel: 100,
+            objects: [],
+            gameTimer: null,
+            spawnTimer: null
+        };
+
+        const gameArea = document.getElementById('gameArea');
+        const scoreElement = document.getElementById('score');
+        const levelElement = document.getElementById('level');
+        const timeElement = document.getElementById('time');
+        const focusFill = document.getElementById('focusFill');
+        const feedback = document.getElementById('feedback');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreElement = document.getElementById('finalScore');
+        const encouragementMessage = document.getElementById('encouragementMessage');
+
+        function startGame() {
+            gameState.isPlaying = true;
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            
+            // Reset game state
+            gameState.score = 0;
+            gameState.timeLeft = 60;
+            gameState.focusLevel = 100;
+            gameState.objects = [];
+            
+            updateDisplay();
+            
+            // Start game timer
+            gameState.gameTimer = setInterval(() => {
+                gameState.timeLeft--;
+                updateDisplay();
+                
+                if (gameState.timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+            
+            // Start spawning objects
+            spawnObjects();
+        }
+
+        function spawnObjects() {
+            if (!gameState.isPlaying) return;
+            
+            // Spawn a target (golden star)
+            createTarget();
+            
+            // Spawn distractors (red circles)
+            const distractorCount = Math.min(3, Math.floor(gameState.score / 10) + 1);
+            for (let i = 0; i < distractorCount; i++) {
+                setTimeout(() => createDistractor(), i * 200);
+            }
+            
+            // Schedule next spawn
+            gameState.spawnTimer = setTimeout(() => {
+                spawnObjects();
+            }, 2000 + Math.random() * 1000);
+        }
+
+        function createTarget() {
+            const target = document.createElement('div');
+            target.className = 'game-object target';
+            
+            // 15% chance for special smiley face with big star in middle
+            const isSpecial = Math.random() < 0.15;
+            if (isSpecial) {
+                target.style.background = '#4ecdc4'; // teal background
+                target.style.fontSize = '16px';
+                target.style.position = 'relative';
+                target.style.display = 'flex';
+                target.style.alignItems = 'center';
+                target.style.justifyContent = 'center';
+                
+                // Create the smiley face parts
+                const face = document.createElement('div');
+                face.style.position = 'relative';
+                face.style.width = '50px';
+                face.style.height = '50px';
+                face.style.borderRadius = '50%';
+                face.style.backgroundColor = '#4ecdc4';
+                face.style.display = 'flex';
+                face.style.alignItems = 'center';
+                face.style.justifyContent = 'center';
+                
+                // Left eye (star)
+                const leftEye = document.createElement('div');
+                leftEye.innerHTML = '⭐';
+                leftEye.style.position = 'absolute';
+                leftEye.style.fontSize = '8px';
+                leftEye.style.left = '12px';
+                leftEye.style.top = '12px';
+                leftEye.style.color = '#ffd700';
+                leftEye.style.pointerEvents = 'none';
+                
+                // Right eye (star)
+                const rightEye = document.createElement('div');
+                rightEye.innerHTML = '⭐';
+                rightEye.style.position = 'absolute';
+                rightEye.style.fontSize = '8px';
+                rightEye.style.right = '12px';
+                rightEye.style.top = '12px';
+                rightEye.style.color = '#ffd700';
+                rightEye.style.pointerEvents = 'none';
+                
+                // Mouth
+                const mouth = document.createElement('div');
+                mouth.style.position = 'absolute';
+                mouth.style.width = '20px';
+                mouth.style.height = '10px';
+                mouth.style.border = '2px solid #ffd700';
+                mouth.style.borderTop = 'none';
+                mouth.style.borderRadius = '0 0 20px 20px';
+                mouth.style.left = '50%';
+                mouth.style.bottom = '8px';
+                mouth.style.transform = 'translateX(-50%)';
+                mouth.style.pointerEvents = 'none';
+                
+                // Big star in the middle
+                const bigStar = document.createElement('div');
+                bigStar.innerHTML = '⭐';
+                bigStar.style.position = 'absolute';
+                bigStar.style.fontSize = '24px';
+                bigStar.style.left = '50%';
+                bigStar.style.top = '50%';
+                bigStar.style.transform = 'translate(-50%, -50%)';
+                bigStar.style.pointerEvents = 'none';
+                
+                face.appendChild(leftEye);
+                face.appendChild(rightEye);
+                face.appendChild(mouth);
+                face.appendChild(bigStar);
+                target.appendChild(face);
+            } else {
+                target.innerHTML = '⭐';
+                
+                // Random background color (no yellow, includes red and 9 other colors)
+                const colors = [
+                    '#ff6b6b', // red (same as distractor)
+                    '#4ecdc4', // teal
+                    '#45b7d1', // blue
+                    '#a8e6cf', // mint green
+                    '#ff8a80', // light red
+                    '#ce93d8', // purple
+                    '#f48fb1', // pink
+                    '#90caf9', // light blue
+                    '#c5e1a5', // light green
+                    '#ff8866'  // orange (changed from #ffcc02 to remove yellow)
+                ];
+                
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                target.style.background = randomColor;
+            }
+            
+            // Random position
+            const x = Math.random() * (gameArea.clientWidth - 60);
+            const y = Math.random() * (gameArea.clientHeight - 60);
+            target.style.left = x + 'px';
+            target.style.top = y + 'px';
+            
+            target.addEventListener('click', () => handleTargetClick(target));
+            
+            gameArea.appendChild(target);
+            gameState.objects.push({element: target, type: 'target'});
+            
+            // Remove after 3 seconds if not clicked
+            setTimeout(() => {
+                if (target.parentNode) {
+                    target.remove();
+                    gameState.objects = gameState.objects.filter(obj => obj.element !== target);
+                }
+            }, 3000);
+        }
+
+        function createDistractor() {
+            const distractor = document.createElement('div');
+            distractor.className = 'game-object distractor';
+            distractor.innerHTML = '●';
+            
+            // Random position
+            const x = Math.random() * (gameArea.clientWidth - 60);
+            const y = Math.random() * (gameArea.clientHeight - 60);
+            distractor.style.left = x + 'px';
+            distractor.style.top = y + 'px';
+            
+            distractor.addEventListener('click', () => handleDistractorClick(distractor));
+            
+            gameArea.appendChild(distractor);
+            gameState.objects.push({element: distractor, type: 'distractor'});
+            
+            // Remove after 4 seconds
+            setTimeout(() => {
+                if (distractor.parentNode) {
+                    distractor.remove();
+                    gameState.objects = gameState.objects.filter(obj => obj.element !== distractor);
+                }
+            }, 4000);
+        }
+
+        function handleTargetClick(target) {
+            gameState.score += 10;
+            gameState.focusLevel = Math.min(100, gameState.focusLevel + 5);
+            
+            // Play whistle sound with random pitch
+            playWhistle();
+            
+            // Check if it's a special smiley face by looking for the face div
+            const isSpecial = target.querySelector('div') !== null;
+            const feedbackMessage = isSpecial ? 'Special Star! +10' : 'Great job! +10';
+            
+            // Visual feedback
+            target.classList.add('celebration');
+            showFeedback(feedbackMessage, '#4ecdc4');
+            
+            // Remove target
+            setTimeout(() => {
+                target.remove();
+                gameState.objects = gameState.objects.filter(obj => obj.element !== target);
+            }, 600);
+            
+            updateDisplay();
+        }
+
+        function handleDistractorClick(distractor) {
+            gameState.focusLevel = Math.max(0, gameState.focusLevel - 15);
+            
+            // Visual feedback
+            distractor.style.background = '#ff4757';
+            showFeedback('Look for stars! -15', '#ff6b6b');
+            
+            // Remove distractor
+            setTimeout(() => {
+                distractor.remove();
+                gameState.objects = gameState.objects.filter(obj => obj.element !== distractor);
+            }, 300);
+            
+            updateDisplay();
+        }
+
+        function showFeedback(message, color) {
+            feedback.textContent = message;
+            feedback.style.color = color;
+            feedback.classList.add('show');
+            
+            setTimeout(() => {
+                feedback.classList.remove('show');
+            }, 1000);
+        }
+
+        function updateDisplay() {
+            scoreElement.textContent = gameState.score;
+            levelElement.textContent = gameState.level;
+            timeElement.textContent = gameState.timeLeft;
+            focusFill.style.width = gameState.focusLevel + '%';
+        }
+
+        function endGame() {
+            gameState.isPlaying = false;
+            clearInterval(gameState.gameTimer);
+            clearTimeout(gameState.spawnTimer);
+            
+            // Clear all objects
+            gameState.objects.forEach(obj => {
+                if (obj.element.parentNode) {
+                    obj.element.remove();
+                }
+            });
+            gameState.objects = [];
+            
+            // Show game over screen
+            finalScoreElement.textContent = gameState.score;
+            
+            let message = '';
+            if (gameState.score >= 100) {
+                message = '🏆 Wow! You found so many stars! You\'re amazing!';
+            } else if (gameState.score >= 50) {
+                message = '🌟 Great job! You\'re really good at finding stars!';
+            } else {
+                message = '💪 Good try! Keep playing to find more stars!';
+            }
+            
+            encouragementMessage.textContent = message;
+            gameOverScreen.classList.remove('hidden');
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        // Audio context for whistle sounds
+        let audioContext;
+        
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playWhistle() {
+            initAudio();
+            
+            // Create oscillator for whistle sound
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            // Random pitch between 800Hz and 1200Hz
+            const frequency = 800 + Math.random() * 400;
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            
+            // Whistle-like wave
+            oscillator.type = 'sine';
+            
+            // Gentle volume
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            // Connect nodes
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Play for 0.3 seconds
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
+    </script>
+</body>
+</html>
