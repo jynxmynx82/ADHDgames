@@ -1,12 +1,15 @@
 let gameState = {
     score: 0,
     level: 1,
-    timeLeft: 60,
+    timeLeft: 30,
     isPlaying: false,
     focusLevel: 100,
     objects: [],
     gameTimer: null,
-    spawnTimer: null
+    spawnTimer: null,
+    moveTimer: null,
+    doubleScore: false,
+    doubleScoreTimeout: null
 };
 
 const gameArea = document.getElementById('gameArea');
@@ -19,16 +22,23 @@ const startScreen = document.getElementById('startScreen');
 const gameOverScreen = document.getElementById('gameOverScreen');
 const finalScoreElement = document.getElementById('finalScore');
 const encouragementMessage = document.getElementById('encouragementMessage');
+const levelUpBanner = document.getElementById('levelUpBanner');
 
-// Audio context for whistle sounds
 let audioContext;
 
-// --- Fun distractor shapes (NO STARS) ---
 const funDistractorShapes = [
     '💀', '👾', '😜', '🎃', '🐸', '🍕', '🦄', '👻', '🤖', '🧸', '🥸', '🥶', '🍄', '🐙', '🎩',
     '👽', '🦖', '👹', '🦉', '🧙‍♂️', '🦑', '🐵', '🦋', '🍔', '🥕'
 ].filter(emoji => !emoji.includes('⭐') && !emoji.includes('🌟') && !emoji.includes('✴️') && !emoji.includes('✨'));
 
+// ----- POWER-UPS -----
+const powerUpTypes = [
+    { emoji: '💎', effect: 'focus', message: 'Focus Restored! +30', color: '#56e39f' },
+    { emoji: '⚡', effect: 'double', message: 'Double Score!', color: '#ffd600' },
+    { emoji: '🕒', effect: 'time', message: 'More Time! +10s', color: '#90caf9' }
+];
+
+// ----- AUDIO -----
 function initAudio() {
     if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -37,125 +47,142 @@ function initAudio() {
 
 function playWhistle() {
     initAudio();
-    
-    // Create oscillator for whistle sound
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
-    
-    // Random pitch between 800Hz and 1200Hz
     const frequency = 800 + Math.random() * 400;
     oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-    
-    // Whistle-like wave
     oscillator.type = 'sine';
-    
-    // Gentle volume
     gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-    
-    // Connect nodes
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
-    
-    // Play for 0.3 seconds
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.3);
 }
 
+// ----- GAME FLOW -----
 function startGame() {
     gameState.isPlaying = true;
     startScreen.classList.add('hidden');
     gameOverScreen.classList.add('hidden');
-    
-    // Reset game state
     gameState.score = 0;
-    gameState.timeLeft = 60;
+    gameState.level = 1;
+    gameState.timeLeft = 30;
     gameState.focusLevel = 100;
     gameState.objects = [];
-    
+    gameState.doubleScore = false;
     updateDisplay();
-    
-    // Start game timer
+
+    if (gameState.gameTimer) clearInterval(gameState.gameTimer);
+    if (gameState.moveTimer) clearInterval(gameState.moveTimer);
+
     gameState.gameTimer = setInterval(() => {
         gameState.timeLeft--;
         updateDisplay();
-        
         if (gameState.timeLeft <= 0) {
-            endGame();
+            nextLevelOrEnd();
         }
     }, 1000);
-    
-    // Start spawning objects
+
     spawnObjects();
+    startMovingObjects(); // Start motion engine, will only move objects if level is high enough
+}
+
+function nextLevelOrEnd() {
+    if (gameState.focusLevel <= 0) {
+        endGame();
+        return;
+    }
+    gameState.level++;
+    gameState.timeLeft = 30;
+    showLevelUpBanner();
+    gameState.objects.forEach(obj => {
+        if (obj.element.parentNode) obj.element.remove();
+    });
+    gameState.objects = [];
+    updateDisplay();
+    // Power-up: Remove double score after level up
+    if (gameState.doubleScoreTimeout) clearTimeout(gameState.doubleScoreTimeout);
+    gameState.doubleScore = false;
+}
+
+function showLevelUpBanner() {
+    if (levelUpBanner) {
+        levelUpBanner.textContent = `Level ${gameState.level}!`;
+        levelUpBanner.classList.add('show');
+        setTimeout(() => levelUpBanner.classList.remove('show'), 1500);
+    } else {
+        showFeedback(`Level ${gameState.level}!`, '#4ecdc4');
+    }
 }
 
 function spawnObjects() {
     if (!gameState.isPlaying) return;
-    
-    // Spawn a target (golden star)
+
+    // Difficulty increases by level
+    const distractorBase = 1;
+    const distractorCount = Math.min(6, distractorBase + Math.floor(gameState.level * 1.5));
+    const spawnInterval = Math.max(800, 2000 - (gameState.level - 1) * 200);
+
     createTarget();
-    
-    // Spawn distractors (red circles or fun shapes)
-    const distractorCount = Math.min(3, Math.floor(gameState.score / 10) + 1);
+
     for (let i = 0; i < distractorCount; i++) {
-        setTimeout(() => createDistractor(), i * 200);
+        setTimeout(() => createDistractor(), i * 120);
     }
-    
-    // Schedule next spawn
+
+    // Power-up: 1 in 5 chance to spawn a power-up, but only from level 2+
+    if (gameState.level >= 2 && Math.random() < 0.2) {
+        setTimeout(() => createPowerUp(), 700);
+    }
+
     gameState.spawnTimer = setTimeout(() => {
         spawnObjects();
-    }, 2000 + Math.random() * 1000);
+    }, spawnInterval + Math.random() * 400);
 }
 
+// ----- TARGET, DISTRACTOR, POWER-UP CREATION -----
 function createTarget() {
     const target = document.createElement('div');
     target.className = 'game-object target';
     target.innerHTML = '⭐';
-    
-    // Random background color (no yellow, includes red and 9 other colors)
+
     const colors = [
-        '#ff6b6b', // red (same as distractor)
-        '#4ecdc4', // teal
-        '#45b7d1', // blue
-        '#a8e6cf', // mint green
-        '#ff8a80', // light red
-        '#ce93d8', // purple
-        '#f48fb1', // pink
-        '#90caf9', // light blue
-        '#c5e1a5', // light green
-        '#ff8866'  // orange (changed from #ffcc02 to remove yellow)
+        '#ff6b6b', '#4ecdc4', '#45b7d1', '#a8e6cf', '#ff8a80',
+        '#ce93d8', '#f48fb1', '#90caf9', '#c5e1a5', '#ff8866'
     ];
-    
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
     target.style.background = randomColor;
-    
+
     // Random position
     const x = Math.random() * (gameArea.clientWidth - 60);
     const y = Math.random() * (gameArea.clientHeight - 60);
     target.style.left = x + 'px';
     target.style.top = y + 'px';
-    
+
+    // Movement props (for later levels)
+    if (gameState.level >= 3) {
+        target.dataset.moving = "true";
+        setRandomMovement(target);
+    }
+
     target.addEventListener('click', () => handleTargetClick(target));
-    
+
     gameArea.appendChild(target);
     gameState.objects.push({element: target, type: 'target'});
-    
-    // Remove after 3 seconds if not clicked
+
+    // Targets disappear sooner as levels go up!
+    const targetLife = Math.max(1200, 3000 - (gameState.level - 1) * 200);
     setTimeout(() => {
         if (target.parentNode) {
             target.remove();
             gameState.objects = gameState.objects.filter(obj => obj.element !== target);
         }
-    }, 3000);
+    }, targetLife);
 }
 
-// --- UPDATED: createDistractor with DOM structure and flex centering ---
 function createDistractor() {
-    // Outer red circle
     const distractor = document.createElement('div');
     distractor.className = 'game-object distractor';
-
-    // Style for red circle (you can move this to your CSS file if you want)
     distractor.style.width = '60px';
     distractor.style.height = '60px';
     distractor.style.borderRadius = '50%';
@@ -167,7 +194,6 @@ function createDistractor() {
     distractor.style.cursor = 'pointer';
     distractor.style.userSelect = 'none';
 
-    // Centered child for shape or emoji
     const inner = document.createElement('span');
     inner.style.display = 'flex';
     inner.style.alignItems = 'center';
@@ -175,7 +201,6 @@ function createDistractor() {
     inner.style.width = '100%';
     inner.style.height = '100%';
 
-    // 30% chance for a fun/silly shape, otherwise default to '●'
     if (Math.random() < 0.3) {
         const randomShape = funDistractorShapes[Math.floor(Math.random() * funDistractorShapes.length)];
         inner.textContent = randomShape;
@@ -183,64 +208,164 @@ function createDistractor() {
     } else {
         inner.textContent = '●';
         inner.style.fontSize = '2rem';
-        inner.style.color = '#222'; // black dot
+        inner.style.color = '#222';
     }
 
     distractor.appendChild(inner);
 
-    // Random position
     const x = Math.random() * (gameArea.clientWidth - 60);
     const y = Math.random() * (gameArea.clientHeight - 60);
     distractor.style.left = x + 'px';
     distractor.style.top = y + 'px';
-    
+
+    // Movement props (for later levels)
+    if (gameState.level >= 3) {
+        distractor.dataset.moving = "true";
+        setRandomMovement(distractor);
+    }
+
     distractor.addEventListener('click', () => handleDistractorClick(distractor));
-    
+
     gameArea.appendChild(distractor);
     gameState.objects.push({element: distractor, type: 'distractor'});
-    
-    // Remove after 4 seconds
+
+    const distractorLife = Math.max(1400, 4000 - (gameState.level - 1) * 200);
     setTimeout(() => {
         if (distractor.parentNode) {
             distractor.remove();
             gameState.objects = gameState.objects.filter(obj => obj.element !== distractor);
         }
-    }, 4000);
+    }, distractorLife);
 }
 
+function createPowerUp() {
+    const powerUp = document.createElement('div');
+    powerUp.className = 'game-object powerup';
+    powerUp.style.width = '60px';
+    powerUp.style.height = '60px';
+    powerUp.style.borderRadius = '50%';
+    powerUp.style.background = '#fffbe7';
+    powerUp.style.position = 'absolute';
+    powerUp.style.display = 'flex';
+    powerUp.style.alignItems = 'center';
+    powerUp.style.justifyContent = 'center';
+    powerUp.style.cursor = 'pointer';
+    powerUp.style.userSelect = 'none';
+    powerUp.style.border = '2px solid #ffd600';
+    powerUp.style.boxShadow = '0 0 10px #ffd600';
+
+    const type = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+    powerUp.textContent = type.emoji;
+    powerUp.dataset.effect = type.effect;
+
+    const x = Math.random() * (gameArea.clientWidth - 60);
+    const y = Math.random() * (gameArea.clientHeight - 60);
+    powerUp.style.left = x + 'px';
+    powerUp.style.top = y + 'px';
+
+    // Movement props (move power-ups from level 5+)
+    if (gameState.level >= 5) {
+        powerUp.dataset.moving = "true";
+        setRandomMovement(powerUp);
+    }
+
+    powerUp.addEventListener('click', () => handlePowerUpClick(powerUp, type));
+
+    gameArea.appendChild(powerUp);
+    gameState.objects.push({element: powerUp, type: 'powerup'});
+
+    setTimeout(() => {
+        if (powerUp.parentNode) {
+            powerUp.remove();
+            gameState.objects = gameState.objects.filter(obj => obj.element !== powerUp);
+        }
+    }, 3500);
+}
+
+// ----- MOVING OBJECTS ENGINE -----
+function setRandomMovement(element) {
+    // Each element gets random dx/dy properties between -2 and 2 (not 0)
+    element.dataset.dx = (Math.random() * 2 + 1) * (Math.random() < 0.5 ? 1 : -1);
+    element.dataset.dy = (Math.random() * 2 + 1) * (Math.random() < 0.5 ? 1 : -1);
+}
+
+function startMovingObjects() {
+    if (gameState.moveTimer) cancelAnimationFrame(gameState.moveTimer);
+
+    function move() {
+        // Only move objects if level >= 3
+        if (gameState.isPlaying && gameState.level >= 3) {
+            gameState.objects.forEach(obj => {
+                if (obj.element.dataset.moving === "true") {
+                    let x = parseFloat(obj.element.style.left);
+                    let y = parseFloat(obj.element.style.top);
+                    let dx = parseFloat(obj.element.dataset.dx);
+                    let dy = parseFloat(obj.element.dataset.dy);
+
+                    // Bounce off walls
+                    if (x + dx < 0 || x + dx > gameArea.clientWidth - 60) {
+                        dx = -dx;
+                        obj.element.dataset.dx = dx;
+                    }
+                    if (y + dy < 0 || y + dy > gameArea.clientHeight - 60) {
+                        dy = -dy;
+                        obj.element.dataset.dy = dy;
+                    }
+
+                    obj.element.style.left = (x + dx) + 'px';
+                    obj.element.style.top = (y + dy) + 'px';
+                }
+            });
+        }
+        gameState.moveTimer = requestAnimationFrame(move);
+    }
+    move();
+}
+
+// ----- CLICK HANDLERS -----
 function handleTargetClick(target) {
-    gameState.score += 10;
+    let points = gameState.doubleScore ? 20 : 10;
+    gameState.score += points;
     gameState.focusLevel = Math.min(100, gameState.focusLevel + 5);
-    
-    // Play whistle sound with random pitch
     playWhistle();
-    
-    // Visual feedback
     target.classList.add('celebration');
-    showFeedback('Great job! +10', '#4ecdc4');
-    
-    // Remove target
+    showFeedback(`Great job! +${points}`, '#4ecdc4');
     setTimeout(() => {
         target.remove();
         gameState.objects = gameState.objects.filter(obj => obj.element !== target);
     }, 600);
-    
     updateDisplay();
 }
 
 function handleDistractorClick(distractor) {
+    // Now also deducts points!
+    let loss = gameState.doubleScore ? 20 : 10;
     gameState.focusLevel = Math.max(0, gameState.focusLevel - 15);
-    
-    // Visual feedback
+    gameState.score = Math.max(0, gameState.score - loss);
     distractor.style.background = '#ff4757';
-    showFeedback('Look for stars! -15', '#ff6b6b');
-    
-    // Remove distractor
+    showFeedback(`Look for stars! -${loss}`, '#ff6b6b');
     setTimeout(() => {
         distractor.remove();
         gameState.objects = gameState.objects.filter(obj => obj.element !== distractor);
     }, 300);
-    
+    updateDisplay();
+}
+
+function handlePowerUpClick(powerUp, type) {
+    if (type.effect === 'focus') {
+        gameState.focusLevel = Math.min(100, gameState.focusLevel + 30);
+    } else if (type.effect === 'double') {
+        gameState.doubleScore = true;
+        if (gameState.doubleScoreTimeout) clearTimeout(gameState.doubleScoreTimeout);
+        gameState.doubleScoreTimeout = setTimeout(() => {
+            gameState.doubleScore = false;
+        }, 7000);
+    } else if (type.effect === 'time') {
+        gameState.timeLeft += 10;
+    }
+    showFeedback(type.message, type.color);
+    powerUp.remove();
+    gameState.objects = gameState.objects.filter(obj => obj.element !== powerUp);
     updateDisplay();
 }
 
@@ -248,7 +373,6 @@ function showFeedback(message, color) {
     feedback.textContent = message;
     feedback.style.color = color;
     feedback.classList.add('show');
-    
     setTimeout(() => {
         feedback.classList.remove('show');
     }, 1000);
@@ -265,18 +389,13 @@ function endGame() {
     gameState.isPlaying = false;
     clearInterval(gameState.gameTimer);
     clearTimeout(gameState.spawnTimer);
-    
-    // Clear all objects
+    if (gameState.moveTimer) cancelAnimationFrame(gameState.moveTimer);
     gameState.objects.forEach(obj => {
-        if (obj.element.parentNode) {
-            obj.element.remove();
-        }
+        if (obj.element.parentNode) obj.element.remove();
     });
     gameState.objects = [];
-    
-    // Show game over screen
     finalScoreElement.textContent = gameState.score;
-    
+
     let message = '';
     if (gameState.score >= 100) {
         message = '🏆 Wow! You found so many stars! You\'re amazing!';
@@ -285,7 +404,7 @@ function endGame() {
     } else {
         message = '💪 Good try! Keep playing to find more stars!';
     }
-    
+
     encouragementMessage.textContent = message;
     gameOverScreen.classList.remove('hidden');
 }
