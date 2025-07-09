@@ -1,14 +1,12 @@
 let gameState = {
     score: 0,
     level: 1,
-    timeLeft: 45, // Changed to 45 seconds
+    timeLeft: 60,
     isPlaying: false,
     focusLevel: 100,
     objects: [],
     gameTimer: null,
-    spawnTimer: null,
-    targetsThisLevel: 0,
-    targetsNeededForLevel: 5 // Targets needed to advance level
+    spawnTimer: null
 };
 
 const gameArea = document.getElementById('gameArea');
@@ -21,9 +19,8 @@ const startScreen = document.getElementById('startScreen');
 const gameOverScreen = document.getElementById('gameOverScreen');
 const finalScoreElement = document.getElementById('finalScore');
 const encouragementMessage = document.getElementById('encouragementMessage');
-const celebrationScreen = document.getElementById('celebrationScreen');
 
-// Audio context for sounds
+// Audio context for whistle sounds
 let audioContext;
 
 function initAudio() {
@@ -35,62 +32,40 @@ function initAudio() {
 function playWhistle() {
     initAudio();
     
+    // Create oscillator for whistle sound
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
     
+    // Random pitch between 800Hz and 1200Hz
     const frequency = 800 + Math.random() * 400;
     oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+    
+    // Whistle-like wave
     oscillator.type = 'sine';
     
+    // Gentle volume
     gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
     
+    // Connect nodes
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
     
+    // Play for 0.3 seconds
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.3);
-}
-
-function playCelebrationSound() {
-    initAudio();
-    
-    // Play a sequence of ascending notes
-    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
-    
-    notes.forEach((frequency, index) => {
-        setTimeout(() => {
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-            oscillator.type = 'triangle';
-            
-            gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.4);
-        }, index * 150);
-    });
 }
 
 function startGame() {
     gameState.isPlaying = true;
     startScreen.classList.add('hidden');
     gameOverScreen.classList.add('hidden');
-    celebrationScreen.classList.add('hidden');
     
     // Reset game state
     gameState.score = 0;
-    gameState.level = 1;
-    gameState.timeLeft = 45;
+    gameState.timeLeft = 60;
     gameState.focusLevel = 100;
     gameState.objects = [];
-    gameState.targetsThisLevel = 0;
     
     updateDisplay();
     
@@ -108,105 +83,22 @@ function startGame() {
     spawnObjects();
 }
 
-function checkLevelUp() {
-    if (gameState.targetsThisLevel >= gameState.targetsNeededForLevel) {
-        gameState.level++;
-        gameState.targetsThisLevel = 0;
-        gameState.targetsNeededForLevel = Math.min(8, gameState.targetsNeededForLevel + 1);
-        
-        // Show celebration for every 3rd level
-        if (gameState.level % 3 === 1 && gameState.level > 1) {
-            showCelebration();
-        } else {
-            showFeedback(`Level ${gameState.level}! 🎉`, '#4ecdc4');
-        }
-        
-        updateDisplay();
-    }
-}
-
-function showCelebration() {
-    // Pause the game temporarily
-    clearTimeout(gameState.spawnTimer);
-    
-    celebrationScreen.classList.remove('hidden');
-    playCelebrationSound();
-    
-    // Create floating particles
-    createCelebrationParticles();
-    
-    // Hide celebration after 3 seconds and resume game
-    setTimeout(() => {
-        celebrationScreen.classList.add('hidden');
-        if (gameState.isPlaying) {
-            spawnObjects();
-        }
-    }, 3000);
-}
-
-function createCelebrationParticles() {
-    const colors = ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#a8e6cf', '#ce93d8'];
-    
-    for (let i = 0; i < 20; i++) {
-        setTimeout(() => {
-            const particle = document.createElement('div');
-            particle.className = 'celebration-particle';
-            particle.style.left = Math.random() * 100 + '%';
-            particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-            particle.innerHTML = ['⭐', '🎉', '✨', '🌟'][Math.floor(Math.random() * 4)];
-            
-            celebrationScreen.appendChild(particle);
-            
-            setTimeout(() => {
-                if (particle.parentNode) {
-                    particle.remove();
-                }
-            }, 2000);
-        }, i * 100);
-    }
-}
-
 function spawnObjects() {
     if (!gameState.isPlaying) return;
     
     // Spawn a target (golden star)
     createTarget();
     
-    // Spawn distractors with increasing difficulty
-    const distractorCount = Math.min(2 + Math.floor(gameState.level / 2), 6);
+    // Spawn distractors (red circles)
+    const distractorCount = Math.min(3, Math.floor(gameState.score / 10) + 1);
     for (let i = 0; i < distractorCount; i++) {
         setTimeout(() => createDistractor(), i * 200);
     }
     
-    // Schedule next spawn (gets faster with levels)
-    const spawnDelay = Math.max(1000, 2500 - (gameState.level * 100));
+    // Schedule next spawn
     gameState.spawnTimer = setTimeout(() => {
         spawnObjects();
-    }, spawnDelay + Math.random() * 500);
-}
-
-function getDistractorIcon() {
-    const level = gameState.level;
-    
-    if (level <= 2) {
-        return '●'; // Simple dots for early levels
-    } else if (level <= 4) {
-        // Mix of dots and basic shapes
-        const icons = ['●', '■', '▲'];
-        return icons[Math.floor(Math.random() * icons.length)];
-    } else if (level <= 6) {
-        // Add more confusing shapes
-        const icons = ['●', '■', '▲', '♦', '◆', '▼'];
-        return icons[Math.floor(Math.random() * icons.length)];
-    } else if (level <= 8) {
-        // Add symbols that might look like stars
-        const icons = ['●', '■', '▲', '♦', '◆', '▼', '✦', '❋', '※'];
-        return icons[Math.floor(Math.random() * icons.length)];
-    } else {
-        // High level: very tricky symbols including star-like ones
-        const icons = ['●', '■', '▲', '♦', '◆', '▼', '✦', '❋', '※', '✱', '✲', '✳', '❅', '❆'];
-        return icons[Math.floor(Math.random() * icons.length)];
-    }
+    }, 2000 + Math.random() * 1000);
 }
 
 function createTarget() {
@@ -216,13 +108,14 @@ function createTarget() {
     // 15% chance for special smiley face with big star in middle
     const isSpecial = Math.random() < 0.15;
     if (isSpecial) {
-        target.style.background = '#4ecdc4';
+        target.style.background = '#4ecdc4'; // teal background
         target.style.fontSize = '16px';
         target.style.position = 'relative';
         target.style.display = 'flex';
         target.style.alignItems = 'center';
         target.style.justifyContent = 'center';
         
+        // Create the smiley face parts
         const face = document.createElement('div');
         face.style.position = 'relative';
         face.style.width = '50px';
@@ -295,7 +188,7 @@ function createTarget() {
             '#f48fb1', // pink
             '#90caf9', // light blue
             '#c5e1a5', // light green
-            '#ff8866'  // orange
+            '#ff8866'  // orange (changed from #ffcc02 to remove yellow)
         ];
         
         const randomColor = colors[Math.floor(Math.random() * colors.length)];
@@ -313,36 +206,19 @@ function createTarget() {
     gameArea.appendChild(target);
     gameState.objects.push({element: target, type: 'target'});
     
-    // Remove after time (gets shorter with higher levels)
-    const targetLifetime = Math.max(2000, 4000 - (gameState.level * 200));
+    // Remove after 3 seconds if not clicked
     setTimeout(() => {
         if (target.parentNode) {
             target.remove();
             gameState.objects = gameState.objects.filter(obj => obj.element !== target);
         }
-    }, targetLifetime);
+    }, 3000);
 }
 
 function createDistractor() {
     const distractor = document.createElement('div');
     distractor.className = 'game-object distractor';
-    distractor.innerHTML = getDistractorIcon();
-    
-    // Higher levels have more similar colors to targets
-    let backgroundColor;
-    if (gameState.level <= 3) {
-        backgroundColor = '#ff6b6b'; // Clear red
-    } else if (gameState.level <= 6) {
-        // Sometimes use colors similar to targets
-        const confusingColors = ['#ff6b6b', '#ff8a80', '#f48fb1'];
-        backgroundColor = confusingColors[Math.floor(Math.random() * confusingColors.length)];
-    } else {
-        // High level: sometimes use target-like colors
-        const veryConfusingColors = ['#ff6b6b', '#ff8a80', '#f48fb1', '#ce93d8', '#90caf9'];
-        backgroundColor = veryConfusingColors[Math.floor(Math.random() * veryConfusingColors.length)];
-    }
-    
-    distractor.style.background = backgroundColor;
+    distractor.innerHTML = '●';
     
     // Random position
     const x = Math.random() * (gameArea.clientWidth - 60);
@@ -355,7 +231,7 @@ function createDistractor() {
     gameArea.appendChild(distractor);
     gameState.objects.push({element: distractor, type: 'distractor'});
     
-    // Remove after time
+    // Remove after 4 seconds
     setTimeout(() => {
         if (distractor.parentNode) {
             distractor.remove();
@@ -366,7 +242,6 @@ function createDistractor() {
 
 function handleTargetClick(target) {
     gameState.score += 10;
-    gameState.targetsThisLevel++;
     gameState.focusLevel = Math.min(100, gameState.focusLevel + 5);
     
     // Play whistle sound with random pitch
@@ -387,7 +262,6 @@ function handleTargetClick(target) {
     }, 600);
     
     updateDisplay();
-    checkLevelUp();
 }
 
 function handleDistractorClick(distractor) {
@@ -440,14 +314,12 @@ function endGame() {
     finalScoreElement.textContent = gameState.score;
     
     let message = '';
-    if (gameState.score >= 150) {
-        message = '🏆 Incredible! You\'re a Star Hunter Master!';
-    } else if (gameState.score >= 100) {
-        message = '🌟 Amazing! You found so many stars!';
+    if (gameState.score >= 100) {
+        message = '🏆 Wow! You found so many stars! You\'re amazing!';
     } else if (gameState.score >= 50) {
-        message = '⭐ Great job! You\'re getting really good!';
+        message = '🌟 Great job! You\'re really good at finding stars!';
     } else {
-        message = '💪 Good try! Keep practicing to find more stars!';
+        message = '💪 Good try! Keep playing to find more stars!';
     }
     
     encouragementMessage.textContent = message;
