@@ -23,6 +23,11 @@ const encouragementMessage = document.getElementById('encouragementMessage');
 // Audio context for whistle sounds
 let audioContext;
 
+// --- Fun distractor shapes (NEW) ---
+const funDistractorShapes = [
+    '💀', '👾', '😜', '🎃', '🐸', '🍕', '🦄', '👻', '🤖', '🧸', '🥸', '🥶', '🍄', '🐙', '🎩'
+];
+
 function initAudio() {
     if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -89,7 +94,7 @@ function spawnObjects() {
     // Spawn a target (golden star)
     createTarget();
     
-    // Spawn distractors (red circles)
+    // Spawn distractors (red circles or fun shapes)
     const distractorCount = Math.min(3, Math.floor(gameState.score / 10) + 1);
     for (let i = 0; i < distractorCount; i++) {
         setTimeout(() => createDistractor(), i * 200);
@@ -143,10 +148,20 @@ function createTarget() {
     }, 3000);
 }
 
+// --- UPDATED: createDistractor to sometimes use fun shapes ---
 function createDistractor() {
     const distractor = document.createElement('div');
     distractor.className = 'game-object distractor';
-    distractor.innerHTML = '●';
+
+    // 30% chance for a fun/silly shape, otherwise default to '●'
+    if (Math.random() < 0.3) {
+        const randomShape = funDistractorShapes[Math.floor(Math.random() * funDistractorShapes.length)];
+        distractor.innerHTML = randomShape;
+        distractor.style.fontSize = '2.5rem'; // Make emoji a nice size
+    } else {
+        distractor.innerHTML = '●';
+        distractor.style.fontSize = '2rem';
+    }
     
     // Random position
     const x = Math.random() * (gameArea.clientWidth - 60);
