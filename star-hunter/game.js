@@ -23,10 +23,11 @@ const encouragementMessage = document.getElementById('encouragementMessage');
 // Audio context for whistle sounds
 let audioContext;
 
-// --- Fun distractor shapes (NEW) ---
+// --- Fun distractor shapes (NO STARS) ---
 const funDistractorShapes = [
-    '💀', '👾', '😜', '🎃', '🐸', '🍕', '🦄', '👻', '🤖', '🧸', '🥸', '🥶', '🍄', '🐙', '🎩'
-];
+    '💀', '👾', '😜', '🎃', '🐸', '🍕', '🦄', '👻', '🤖', '🧸', '🥸', '🥶', '🍄', '🐙', '🎩',
+    '👽', '🦖', '👹', '🦉', '🧙‍♂️', '🦑', '🐵', '🦋', '🍔', '🥕'
+].filter(emoji => !emoji.includes('⭐') && !emoji.includes('🌟') && !emoji.includes('✴️') && !emoji.includes('✨'));
 
 function initAudio() {
     if (!audioContext) {
@@ -148,21 +149,45 @@ function createTarget() {
     }, 3000);
 }
 
-// --- UPDATED: createDistractor to sometimes use fun shapes ---
+// --- UPDATED: createDistractor with DOM structure and flex centering ---
 function createDistractor() {
+    // Outer red circle
     const distractor = document.createElement('div');
     distractor.className = 'game-object distractor';
+
+    // Style for red circle (you can move this to your CSS file if you want)
+    distractor.style.width = '60px';
+    distractor.style.height = '60px';
+    distractor.style.borderRadius = '50%';
+    distractor.style.background = '#ff6b6b';
+    distractor.style.position = 'absolute';
+    distractor.style.display = 'flex';
+    distractor.style.alignItems = 'center';
+    distractor.style.justifyContent = 'center';
+    distractor.style.cursor = 'pointer';
+    distractor.style.userSelect = 'none';
+
+    // Centered child for shape or emoji
+    const inner = document.createElement('span');
+    inner.style.display = 'flex';
+    inner.style.alignItems = 'center';
+    inner.style.justifyContent = 'center';
+    inner.style.width = '100%';
+    inner.style.height = '100%';
 
     // 30% chance for a fun/silly shape, otherwise default to '●'
     if (Math.random() < 0.3) {
         const randomShape = funDistractorShapes[Math.floor(Math.random() * funDistractorShapes.length)];
-        distractor.innerHTML = randomShape;
-        distractor.style.fontSize = '2.5rem'; // Make emoji a nice size
+        inner.textContent = randomShape;
+        inner.style.fontSize = '2.2rem';
     } else {
-        distractor.innerHTML = '●';
-        distractor.style.fontSize = '2rem';
+        inner.textContent = '●';
+        inner.style.fontSize = '2rem';
+        inner.style.color = '#222'; // black dot
     }
-    
+
+    distractor.appendChild(inner);
+
     // Random position
     const x = Math.random() * (gameArea.clientWidth - 60);
     const y = Math.random() * (gameArea.clientHeight - 60);
