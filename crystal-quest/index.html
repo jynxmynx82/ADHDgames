@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crystal Quest Adventure</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="ui-overlay">
+            <div class="score-display">
+                <div class="crystal-counter">
+                    <div class="crystal-icon"></div>
+                    <span id="crystalCount">0</span>
+                </div>
+                <div>Level <span id="levelDisplay">1</span></div>
+            </div>
+            <div>🎮 Crystal Quest</div>
+        </div>
+        
+        <div class="player" id="player"></div>
+        
+        <div class="focus-bar" id="focusBar">
+            <div class="focus-progress" id="focusProgress"></div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-btn" id="leftBtn">←</div>
+            <div class="control-btn" id="upBtn">↑</div>
+            <div class="control-btn" id="downBtn">↓</div>
+            <div class="control-btn" id="rightBtn">→</div>
+            <div class="space-btn" id="spaceBtn">FOCUS</div>
+        </div>
+        
+        <div class="instructions" id="instructions">
+            Tap the buttons to move!<br>Get close to crystals and tap them! ✨
+        </div>
+        
+        <div class="level-complete" id="levelComplete">
+            <h2>Level Complete!</h2>
+            <p>Get ready for the next level...</p>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
