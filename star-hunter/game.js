@@ -104,96 +104,24 @@ function spawnObjects() {
 function createTarget() {
     const target = document.createElement('div');
     target.className = 'game-object target';
+    target.innerHTML = '⭐';
     
-    // 15% chance for special smiley face with big star in middle
-    const isSpecial = Math.random() < 0.15;
-    if (isSpecial) {
-        target.style.background = '#4ecdc4'; // teal background
-        target.style.fontSize = '16px';
-        target.style.position = 'relative';
-        target.style.display = 'flex';
-        target.style.alignItems = 'center';
-        target.style.justifyContent = 'center';
-        
-        // Create the smiley face parts
-        const face = document.createElement('div');
-        face.style.position = 'relative';
-        face.style.width = '50px';
-        face.style.height = '50px';
-        face.style.borderRadius = '50%';
-        face.style.backgroundColor = '#4ecdc4';
-        face.style.display = 'flex';
-        face.style.alignItems = 'center';
-        face.style.justifyContent = 'center';
-        
-        // Left eye (star)
-        const leftEye = document.createElement('div');
-        leftEye.innerHTML = '⭐';
-        leftEye.style.position = 'absolute';
-        leftEye.style.fontSize = '8px';
-        leftEye.style.left = '12px';
-        leftEye.style.top = '12px';
-        leftEye.style.color = '#ffd700';
-        leftEye.style.pointerEvents = 'none';
-        
-        // Right eye (star)
-        const rightEye = document.createElement('div');
-        rightEye.innerHTML = '⭐';
-        rightEye.style.position = 'absolute';
-        rightEye.style.fontSize = '8px';
-        rightEye.style.right = '12px';
-        rightEye.style.top = '12px';
-        rightEye.style.color = '#ffd700';
-        rightEye.style.pointerEvents = 'none';
-        
-        // Mouth
-        const mouth = document.createElement('div');
-        mouth.style.position = 'absolute';
-        mouth.style.width = '20px';
-        mouth.style.height = '10px';
-        mouth.style.border = '2px solid #ffd700';
-        mouth.style.borderTop = 'none';
-        mouth.style.borderRadius = '0 0 20px 20px';
-        mouth.style.left = '50%';
-        mouth.style.bottom = '8px';
-        mouth.style.transform = 'translateX(-50%)';
-        mouth.style.pointerEvents = 'none';
-        
-        // Big star in the middle
-        const bigStar = document.createElement('div');
-        bigStar.innerHTML = '⭐';
-        bigStar.style.position = 'absolute';
-        bigStar.style.fontSize = '24px';
-        bigStar.style.left = '50%';
-        bigStar.style.top = '50%';
-        bigStar.style.transform = 'translate(-50%, -50%)';
-        bigStar.style.pointerEvents = 'none';
-        
-        face.appendChild(leftEye);
-        face.appendChild(rightEye);
-        face.appendChild(mouth);
-        face.appendChild(bigStar);
-        target.appendChild(face);
-    } else {
-        target.innerHTML = '⭐';
-        
-        // Random background color (no yellow, includes red and 9 other colors)
-        const colors = [
-            '#ff6b6b', // red (same as distractor)
-            '#4ecdc4', // teal
-            '#45b7d1', // blue
-            '#a8e6cf', // mint green
-            '#ff8a80', // light red
-            '#ce93d8', // purple
-            '#f48fb1', // pink
-            '#90caf9', // light blue
-            '#c5e1a5', // light green
-            '#ff8866'  // orange (changed from #ffcc02 to remove yellow)
-        ];
-        
-        const randomColor = colors[Math.floor(Math.random() * colors.length)];
-        target.style.background = randomColor;
-    }
+    // Random background color (no yellow, includes red and 9 other colors)
+    const colors = [
+        '#ff6b6b', // red (same as distractor)
+        '#4ecdc4', // teal
+        '#45b7d1', // blue
+        '#a8e6cf', // mint green
+        '#ff8a80', // light red
+        '#ce93d8', // purple
+        '#f48fb1', // pink
+        '#90caf9', // light blue
+        '#c5e1a5', // light green
+        '#ff8866'  // orange (changed from #ffcc02 to remove yellow)
+    ];
+    
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    target.style.background = randomColor;
     
     // Random position
     const x = Math.random() * (gameArea.clientWidth - 60);
@@ -247,13 +175,9 @@ function handleTargetClick(target) {
     // Play whistle sound with random pitch
     playWhistle();
     
-    // Check if it's a special smiley face by looking for the face div
-    const isSpecial = target.querySelector('div') !== null;
-    const feedbackMessage = isSpecial ? 'Special Star! +10' : 'Great job! +10';
-    
     // Visual feedback
     target.classList.add('celebration');
-    showFeedback(feedbackMessage, '#4ecdc4');
+    showFeedback('Great job! +10', '#4ecdc4');
     
     // Remove target
     setTimeout(() => {
