@@ -1,48 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Focus Master - Train Your Focus!</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <title>Star Hunter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="star-hunter/style.css">
 </head>
 <body>
-    <div class="game-container">
-        <div class="game-header">
-            <h1 class="game-title">🌟 Star Hunter 🌟</h1>
-            <div class="game-stats">
-                <div>Stars: <span id="score">0</span></div>
-                <div>Level: <span id="level">1</span></div>
-                <div>Time: <span id="time">60</span>s</div>
-            </div>
-            <div class="focus-meter">
-                <div class="focus-fill" id="focusFill"></div>
-            </div>
-        </div>
+  <div id="headerBar">
+    <h1>⭐ Star Hunter ⭐</h1>
+  </div>
 
-        <div class="game-area" id="gameArea">
-            <div class="feedback" id="feedback"></div>
-        </div>
-
-        <div class="start-screen" id="startScreen">
-            <h2>🎯 Welcome to Star Hunter! 🎯</h2>
-            <div class="instructions">
-                <p>Find and click the <strong>stars</strong> ⭐ to get points!</p>
-                <p>Don't click the red circles - they will trick you!</p>
-                <p>Click as many stars as you can!</p>
-                <p>Ready to hunt for stars?</p>
-            </div>
-            <button class="start-button" onclick="startGame()">🚀 Let's Play!</button>
-        </div>
-
-        <div class="game-over-screen hidden" id="gameOverScreen">
-            <h2>🎉 Great Job, Star Hunter! 🎉</h2>
-            <p>Star Count: <span id="finalScore">0</span></p>
-            <p id="encouragementMessage"></p>
-            <button class="restart-button" onclick="restartGame()">🔄 Play Again</button>
-        </div>
+  <div id="gameArea">
+    <div id="hud">
+      <span>Score: <strong id="score">0</strong></span>
+      <span>Level: <strong id="level">1</strong></span>
+      <span>Time: <strong id="time">30</strong>s</span>
+      <span>Focus:
+        <span id="focusBar">
+          <span id="focusFill" style="width:100%"></span>
+        </span>
+      </span>
     </div>
-
-    <script src="game.js"></script>
+    <div id="feedback"></div>
+    <div id="levelUpBanner" class="level-up-banner"></div>
+    <div id="startScreen" class="">
+      <h2>Welcome to Star Hunter!</h2>
+      <p>Click as many stars as you can while ignoring distractions.<br>
+      Keep your focus high and watch out for power-ups!</p>
+      <button onclick="restartGame()">Start</button>
+    </div>
+    <div id="gameOverScreen" class="hidden">
+      <h2>Game Over!</h2>
+      <div>Your Score:</div>
+      <div id="finalScore">0</div>
+      <div id="encouragementMessage"></div>
+      <button onclick="restartGame()">Play Again</button>
+    </div>
+  </div>
+  <script src="star-hunter/game.js"></script>
 </body>
 </html>
