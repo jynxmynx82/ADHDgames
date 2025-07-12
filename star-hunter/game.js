@@ -60,7 +60,6 @@ function playWhistle() {
     oscillator.stop(audioContext.currentTime + 0.3);
 }
 
-// NEW: Sound for clicking a distractor
 function playErrorSound() {
     initAudio();
     const oscillator = audioContext.createOscillator();
@@ -75,7 +74,6 @@ function playErrorSound() {
     oscillator.stop(audioContext.currentTime + 0.2);
 }
 
-// NEW: Sound for collecting a power-up
 function playPowerUpSound() {
     initAudio();
     const oscillator = audioContext.createOscillator();
@@ -105,8 +103,13 @@ function startGame() {
     gameState.doubleScore = false;
     updateDisplay();
 
+    // --- (CHANGE START) ---
+    // Clear all previous game timers to prevent bugs on restart
     if (gameState.gameTimer) clearInterval(gameState.gameTimer);
-    if (gameState.moveTimer) clearInterval(gameState.moveTimer);
+    if (gameState.spawnTimer) clearTimeout(gameState.spawnTimer);
+    if (gameState.moveTimer) cancelAnimationFrame(gameState.moveTimer);
+    if (gameState.doubleScoreTimeout) clearTimeout(gameState.doubleScoreTimeout);
+    // --- (CHANGE END) ---
 
     gameState.gameTimer = setInterval(() => {
         gameState.timeLeft--;
@@ -117,7 +120,7 @@ function startGame() {
     }, 1000);
 
     spawnObjects();
-    startMovingObjects(); // Start motion engine, will only move objects if level is high enough
+    startMovingObjects();
 }
 
 function nextLevelOrEnd() {
@@ -133,7 +136,6 @@ function nextLevelOrEnd() {
     });
     gameState.objects = [];
     updateDisplay();
-    // Power-up: Remove double score after level up
     if (gameState.doubleScoreTimeout) clearTimeout(gameState.doubleScoreTimeout);
     gameState.doubleScore = false;
 }
@@ -151,7 +153,6 @@ function showLevelUpBanner() {
 function spawnObjects() {
     if (!gameState.isPlaying) return;
 
-    // Difficulty increases by level
     const distractorBase = 1;
     const distractorCount = Math.min(6, distractorBase + Math.floor(gameState.level * 1.5));
     const spawnInterval = Math.max(800, 2000 - (gameState.level - 1) * 200);
@@ -162,7 +163,6 @@ function spawnObjects() {
         setTimeout(() => createDistractor(), i * 120);
     }
 
-    // Power-up: 1 in 5 chance to spawn a power-up, but only from level 2+
     if (gameState.level >= 2 && Math.random() < 0.2) {
         setTimeout(() => createPowerUp(), 700);
     }
@@ -307,12 +307,7 @@ function createPowerUp() {
 
 // ----- MOVING OBJECTS ENGINE -----
 function setRandomMovement(element) {
-    // NEW: Movement speed is now slower and scales with the level.
-    // This makes level 3 much more manageable and provides a smoother difficulty curve.
-    // Level 3 speed is between 0.5 and 1.0 pixels/frame.
-    // Speed increases by ~0.25 pixels/frame for each subsequent level.
     const speed = 0.5 + (gameState.level - 3) * 0.25;
-
     element.dataset.dx = (Math.random() * speed + 0.5) * (Math.random() < 0.5 ? 1 : -1);
     element.dataset.dy = (Math.random() * speed + 0.5) * (Math.random() < 0.5 ? 1 : -1);
 }
@@ -367,7 +362,7 @@ function handleDistractorClick(distractor) {
     let loss = gameState.doubleScore ? 20 : 10;
     gameState.focusLevel = Math.max(0, gameState.focusLevel - 15);
     gameState.score = Math.max(0, gameState.score - loss);
-    playErrorSound(); // NEW: Added error sound for negative feedback
+    playErrorSound();
     distractor.style.background = '#ff4757';
     showFeedback(`Look for stars! -${loss}`, '#ff6b6b');
     setTimeout(() => {
@@ -389,7 +384,7 @@ function handlePowerUpClick(powerUp, type) {
     } else if (type.effect === 'time') {
         gameState.timeLeft += 10;
     }
-    playPowerUpSound(); // NEW: Added sound for collecting a power-up
+    playPowerUpSound();
     showFeedback(type.message, type.color);
     powerUp.remove();
     gameState.objects = gameState.objects.filter(obj => obj.element !== powerUp);
