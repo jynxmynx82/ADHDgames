@@ -191,8 +191,9 @@ function createTarget() {
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
     target.style.background = randomColor;
 
-    const x = Math.random() * (gameArea.clientWidth - 60);
-    const y = Math.random() * (gameArea.clientHeight - 60);
+    const objectWidth = parseFloat(getComputedStyle(target).width);
+    const x = Math.random() * (gameArea.clientWidth - objectWidth);
+    const y = Math.random() * (gameArea.clientHeight - objectWidth);
     target.style.left = x + 'px';
     target.style.top = y + 'px';
 
@@ -217,16 +218,7 @@ function createTarget() {
 function createDistractor() {
     const distractor = document.createElement('div');
     distractor.className = 'game-object distractor';
-    distractor.style.width = '60px';
-    distractor.style.height = '60px';
-    distractor.style.borderRadius = '50%';
     distractor.style.background = '#ff6b6b';
-    distractor.style.position = 'absolute';
-    distractor.style.display = 'flex';
-    distractor.style.alignItems = 'center';
-    distractor.style.justifyContent = 'center';
-    distractor.style.cursor = 'pointer';
-    distractor.style.userSelect = 'none';
 
     const inner = document.createElement('span');
     inner.style.display = 'flex';
@@ -246,8 +238,9 @@ function createDistractor() {
     }
     distractor.appendChild(inner);
 
-    const x = Math.random() * (gameArea.clientWidth - 60);
-    const y = Math.random() * (gameArea.clientHeight - 60);
+    const objectWidth = parseFloat(getComputedStyle(distractor).width);
+    const x = Math.random() * (gameArea.clientWidth - objectWidth);
+    const y = Math.random() * (gameArea.clientHeight - objectWidth);
     distractor.style.left = x + 'px';
     distractor.style.top = y + 'px';
 
@@ -272,16 +265,7 @@ function createDistractor() {
 function createPowerUp() {
     const powerUp = document.createElement('div');
     powerUp.className = 'game-object powerup';
-    powerUp.style.width = '60px';
-    powerUp.style.height = '60px';
-    powerUp.style.borderRadius = '50%';
     powerUp.style.background = '#fffbe7';
-    powerUp.style.position = 'absolute';
-    powerUp.style.display = 'flex';
-    powerUp.style.alignItems = 'center';
-    powerUp.style.justifyContent = 'center';
-    powerUp.style.cursor = 'pointer';
-    powerUp.style.userSelect = 'none';
     powerUp.style.border = '2px solid #ffd600';
     powerUp.style.boxShadow = '0 0 10px #ffd600';
 
@@ -289,8 +273,9 @@ function createPowerUp() {
     powerUp.textContent = type.emoji;
     powerUp.dataset.effect = type.effect;
 
-    const x = Math.random() * (gameArea.clientWidth - 60);
-    const y = Math.random() * (gameArea.clientHeight - 60);
+    const objectWidth = parseFloat(getComputedStyle(powerUp).width);
+    const x = Math.random() * (gameArea.clientWidth - objectWidth);
+    const y = Math.random() * (gameArea.clientHeight - objectWidth);
     powerUp.style.left = x + 'px';
     powerUp.style.top = y + 'px';
 
