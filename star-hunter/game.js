@@ -1,3 +1,5 @@
+// --- COPY AND PASTE THIS ENTIRE FILE ---
+
 let gameState = {
     score: 0,
     level: 1,
@@ -92,6 +94,7 @@ function playPowerUpSound() {
 
 // ----- GAME FLOW -----
 function startGame() {
+    console.log("DEBUG: startGame() was called."); // DEBUG LINE
     gameState.isPlaying = true;
     startScreen.classList.add('hidden');
     gameOverScreen.classList.add('hidden');
@@ -103,13 +106,10 @@ function startGame() {
     gameState.doubleScore = false;
     updateDisplay();
 
-    // --- (CHANGE START) ---
-    // Clear all previous game timers to prevent bugs on restart
     if (gameState.gameTimer) clearInterval(gameState.gameTimer);
     if (gameState.spawnTimer) clearTimeout(gameState.spawnTimer);
     if (gameState.moveTimer) cancelAnimationFrame(gameState.moveTimer);
     if (gameState.doubleScoreTimeout) clearTimeout(gameState.doubleScoreTimeout);
-    // --- (CHANGE END) ---
 
     gameState.gameTimer = setInterval(() => {
         gameState.timeLeft--;
@@ -408,6 +408,7 @@ function updateDisplay() {
 }
 
 function endGame() {
+    console.log("DEBUG: endGame() was called."); // DEBUG LINE
     gameState.isPlaying = false;
     clearInterval(gameState.gameTimer);
     clearTimeout(gameState.spawnTimer);
@@ -432,5 +433,6 @@ function endGame() {
 }
 
 function restartGame() {
+    console.log("DEBUG: restartGame() was called."); // DEBUG LINE
     startGame();
 }
