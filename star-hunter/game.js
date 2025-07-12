@@ -1,11 +1,10 @@
-// --- COPY AND PASTE THIS ENTIRE FILE ---
-
 let gameState = {
     score: 0,
     level: 1,
     timeLeft: 30,
     isPlaying: false,
     focusLevel: 100,
+    starsClickedThisLevel: 0, // NEW: Tracks if a star was clicked in the current level
     objects: [],
     gameTimer: null,
     spawnTimer: null,
@@ -94,7 +93,6 @@ function playPowerUpSound() {
 
 // ----- GAME FLOW -----
 function startGame() {
-    console.log("DEBUG: startGame() was called."); // DEBUG LINE
     gameState.isPlaying = true;
     startScreen.classList.add('hidden');
     gameOverScreen.classList.add('hidden');
@@ -102,6 +100,7 @@ function startGame() {
     gameState.level = 1;
     gameState.timeLeft = 30;
     gameState.focusLevel = 100;
+    gameState.starsClickedThisLevel = 0; // Reset star click counter
     gameState.objects = [];
     gameState.doubleScore = false;
     updateDisplay();
@@ -123,13 +122,19 @@ function startGame() {
     startMovingObjects();
 }
 
+// --- (CHANGE START) ---
+// This function is now rewritten to check for success before leveling up.
 function nextLevelOrEnd() {
-    if (gameState.focusLevel <= 0) {
+    // End the game if focus is gone, OR if the player clicked no stars last level (after level 1)
+    if (gameState.focusLevel <= 0 || (gameState.level > 1 && gameState.starsClickedThisLevel === 0)) {
         endGame();
         return;
     }
+
+    // If successful, proceed to the next level
     gameState.level++;
     gameState.timeLeft = 30;
+    gameState.starsClickedThisLevel = 0; // Reset for the new level
     showLevelUpBanner();
     gameState.objects.forEach(obj => {
         if (obj.element.parentNode) obj.element.remove();
@@ -139,6 +144,7 @@ function nextLevelOrEnd() {
     if (gameState.doubleScoreTimeout) clearTimeout(gameState.doubleScoreTimeout);
     gameState.doubleScore = false;
 }
+// --- (CHANGE END) ---
 
 function showLevelUpBanner() {
     if (levelUpBanner) {
@@ -348,6 +354,7 @@ function handleTargetClick(target) {
     let points = gameState.doubleScore ? 20 : 10;
     gameState.score += points;
     gameState.focusLevel = Math.min(100, gameState.focusLevel + 5);
+    gameState.starsClickedThisLevel++; // --- (CHANGE) --- Increment the counter
     playWhistle();
     target.classList.add('celebration');
     showFeedback(`Great job! +${points}`, '#4ecdc4');
@@ -408,7 +415,6 @@ function updateDisplay() {
 }
 
 function endGame() {
-    console.log("DEBUG: endGame() was called."); // DEBUG LINE
     gameState.isPlaying = false;
     clearInterval(gameState.gameTimer);
     clearTimeout(gameState.spawnTimer);
@@ -433,6 +439,32 @@ function endGame() {
 }
 
 function restartGame() {
-    console.log("DEBUG: restartGame() was called."); // DEBUG LINE
     startGame();
 }
+
+// --- (NEW) ---
+// This section handles resizing the game for mobile devices
+function handleResize() {
+    const gameContainer = document.querySelector('.game-container');
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    
+    // Set a base aspect ratio (e.g., 4:3)
+    const ratio = 800 / 600;
+
+    let newWidth = screenWidth;
+    let newHeight = screenWidth / ratio;
+
+    if (newHeight > screenHeight) {
+        newHeight = screenHeight;
+        newWidth = newHeight * ratio;
+    }
+
+    // Apply a scale transform to the container
+    const scale = newWidth / 800;
+    gameContainer.style.transform = `scale(${scale})`;
+}
+
+// Add event listeners for resize and initial load
+window.addEventListener('resize', handleResize);
+window.addEventListener('load', handleResize);
