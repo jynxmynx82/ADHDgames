@@ -60,6 +60,38 @@ function playWhistle() {
     oscillator.stop(audioContext.currentTime + 0.3);
 }
 
+// NEW: Sound for clicking a distractor
+function playErrorSound() {
+    initAudio();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(150, audioContext.currentTime);
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.2);
+}
+
+// NEW: Sound for collecting a power-up
+function playPowerUpSound() {
+    initAudio();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.2);
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.2);
+}
+
+
 // ----- GAME FLOW -----
 function startGame() {
     gameState.isPlaying = true;
@@ -153,24 +185,20 @@ function createTarget() {
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
     target.style.background = randomColor;
 
-    // Random position
     const x = Math.random() * (gameArea.clientWidth - 60);
     const y = Math.random() * (gameArea.clientHeight - 60);
     target.style.left = x + 'px';
     target.style.top = y + 'px';
 
-    // Movement props (for later levels)
     if (gameState.level >= 3) {
         target.dataset.moving = "true";
         setRandomMovement(target);
     }
 
     target.addEventListener('click', () => handleTargetClick(target));
-
     gameArea.appendChild(target);
     gameState.objects.push({element: target, type: 'target'});
 
-    // Targets disappear sooner as levels go up!
     const targetLife = Math.max(1200, 3000 - (gameState.level - 1) * 200);
     setTimeout(() => {
         if (target.parentNode) {
@@ -210,7 +238,6 @@ function createDistractor() {
         inner.style.fontSize = '2rem';
         inner.style.color = '#222';
     }
-
     distractor.appendChild(inner);
 
     const x = Math.random() * (gameArea.clientWidth - 60);
@@ -218,14 +245,12 @@ function createDistractor() {
     distractor.style.left = x + 'px';
     distractor.style.top = y + 'px';
 
-    // Movement props (for later levels)
     if (gameState.level >= 3) {
         distractor.dataset.moving = "true";
         setRandomMovement(distractor);
     }
 
     distractor.addEventListener('click', () => handleDistractorClick(distractor));
-
     gameArea.appendChild(distractor);
     gameState.objects.push({element: distractor, type: 'distractor'});
 
@@ -263,14 +288,12 @@ function createPowerUp() {
     powerUp.style.left = x + 'px';
     powerUp.style.top = y + 'px';
 
-    // Movement props (move power-ups from level 5+)
     if (gameState.level >= 5) {
         powerUp.dataset.moving = "true";
         setRandomMovement(powerUp);
     }
 
     powerUp.addEventListener('click', () => handlePowerUpClick(powerUp, type));
-
     gameArea.appendChild(powerUp);
     gameState.objects.push({element: powerUp, type: 'powerup'});
 
@@ -284,16 +307,20 @@ function createPowerUp() {
 
 // ----- MOVING OBJECTS ENGINE -----
 function setRandomMovement(element) {
-    // Each element gets random dx/dy properties between -2 and 2 (not 0)
-    element.dataset.dx = (Math.random() * 2 + 1) * (Math.random() < 0.5 ? 1 : -1);
-    element.dataset.dy = (Math.random() * 2 + 1) * (Math.random() < 0.5 ? 1 : -1);
+    // NEW: Movement speed is now slower and scales with the level.
+    // This makes level 3 much more manageable and provides a smoother difficulty curve.
+    // Level 3 speed is between 0.5 and 1.0 pixels/frame.
+    // Speed increases by ~0.25 pixels/frame for each subsequent level.
+    const speed = 0.5 + (gameState.level - 3) * 0.25;
+
+    element.dataset.dx = (Math.random() * speed + 0.5) * (Math.random() < 0.5 ? 1 : -1);
+    element.dataset.dy = (Math.random() * speed + 0.5) * (Math.random() < 0.5 ? 1 : -1);
 }
 
 function startMovingObjects() {
     if (gameState.moveTimer) cancelAnimationFrame(gameState.moveTimer);
 
     function move() {
-        // Only move objects if level >= 3
         if (gameState.isPlaying && gameState.level >= 3) {
             gameState.objects.forEach(obj => {
                 if (obj.element.dataset.moving === "true") {
@@ -302,7 +329,6 @@ function startMovingObjects() {
                     let dx = parseFloat(obj.element.dataset.dx);
                     let dy = parseFloat(obj.element.dataset.dy);
 
-                    // Bounce off walls
                     if (x + dx < 0 || x + dx > gameArea.clientWidth - 60) {
                         dx = -dx;
                         obj.element.dataset.dx = dx;
@@ -338,10 +364,10 @@ function handleTargetClick(target) {
 }
 
 function handleDistractorClick(distractor) {
-    // Now also deducts points!
     let loss = gameState.doubleScore ? 20 : 10;
     gameState.focusLevel = Math.max(0, gameState.focusLevel - 15);
     gameState.score = Math.max(0, gameState.score - loss);
+    playErrorSound(); // NEW: Added error sound for negative feedback
     distractor.style.background = '#ff4757';
     showFeedback(`Look for stars! -${loss}`, '#ff6b6b');
     setTimeout(() => {
@@ -363,6 +389,7 @@ function handlePowerUpClick(powerUp, type) {
     } else if (type.effect === 'time') {
         gameState.timeLeft += 10;
     }
+    playPowerUpSound(); // NEW: Added sound for collecting a power-up
     showFeedback(type.message, type.color);
     powerUp.remove();
     gameState.objects = gameState.objects.filter(obj => obj.element !== powerUp);
