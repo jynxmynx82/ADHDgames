@@ -329,12 +329,13 @@ function startMovingObjects() {
                     let y = parseFloat(obj.element.style.top);
                     let dx = parseFloat(obj.element.dataset.dx);
                     let dy = parseFloat(obj.element.dataset.dy);
+                    let objectWidth = obj.element.getBoundingClientRect().width;
 
-                    if (x + dx < 0 || x + dx > gameArea.clientWidth - 60) {
+                    if (x + dx < 0 || x + dx > gameArea.clientWidth - objectWidth) {
                         dx = -dx;
                         obj.element.dataset.dx = dx;
                     }
-                    if (y + dy < 0 || y + dy > gameArea.clientHeight - 60) {
+                    if (y + dy < 0 || y + dy > gameArea.clientHeight - objectWidth) {
                         dy = -dy;
                         obj.element.dataset.dy = dy;
                     }
