@@ -441,30 +441,3 @@ function endGame() {
 function restartGame() {
     startGame();
 }
-
-// --- (NEW) ---
-// This section handles resizing the game for mobile devices
-function handleResize() {
-    const gameContainer = document.querySelector('.game-container');
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
-    
-    // Set a base aspect ratio (e.g., 4:3)
-    const ratio = 800 / 600;
-
-    let newWidth = screenWidth;
-    let newHeight = screenWidth / ratio;
-
-    if (newHeight > screenHeight) {
-        newHeight = screenHeight;
-        newWidth = newHeight * ratio;
-    }
-
-    // Apply a scale transform to the container
-    const scale = newWidth / 800;
-    gameContainer.style.transform = `scale(${scale})`;
-}
-
-// Add event listeners for resize and initial load
-window.addEventListener('resize', handleResize);
-window.addEventListener('load', handleResize);
