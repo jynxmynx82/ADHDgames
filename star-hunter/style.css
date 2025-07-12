@@ -1,8 +1,7 @@
 /* General Body and Font Styles */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    display: flex;
-    flex-direction: column;
+    display: flex; /* Changed from column to center */
     align-items: center;
     justify-content: center;
     height: 100vh;
@@ -49,7 +48,15 @@ body {
     z-index: 10; /* Ensures HUD is on top of game objects */
     box-sizing: border-box;
 }
+.game-container {
+    position: relative;
+    overflow: hidden;
 
+    /* Add these three lines for mobile scaling */
+    width: 800px; /* Base width */
+    height: 600px; /* Base height */
+    transform-origin: top left; /* Scale from the top-left corner */
+}
 #hud span {
     font-size: 1.1em;
     font-weight: bold;
