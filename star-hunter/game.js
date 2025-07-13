@@ -191,9 +191,8 @@ function createTarget() {
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
     target.style.background = randomColor;
 
-    const objectWidth = parseFloat(getComputedStyle(target).width);
-    const x = Math.random() * (gameArea.clientWidth - objectWidth);
-    const y = Math.random() * (gameArea.clientHeight - objectWidth);
+    target.style.left = Math.random() * (gameArea.clientWidth - 60) + 'px';
+    target.style.top = Math.random() * (gameArea.clientHeight - 60) + 'px';
     target.style.left = x + 'px';
     target.style.top = y + 'px';
 
@@ -238,9 +237,8 @@ function createDistractor() {
     }
     distractor.appendChild(inner);
 
-    const objectWidth = parseFloat(getComputedStyle(distractor).width);
-    const x = Math.random() * (gameArea.clientWidth - objectWidth);
-    const y = Math.random() * (gameArea.clientHeight - objectWidth);
+    distractor.style.left = Math.random() * (gameArea.clientWidth - 60) + 'px';
+    distractor.style.top = Math.random() * (gameArea.clientHeight - 60) + 'px';
     distractor.style.left = x + 'px';
     distractor.style.top = y + 'px';
 
@@ -273,9 +271,8 @@ function createPowerUp() {
     powerUp.textContent = type.emoji;
     powerUp.dataset.effect = type.effect;
 
-    const objectWidth = parseFloat(getComputedStyle(powerUp).width);
-    const x = Math.random() * (gameArea.clientWidth - objectWidth);
-    const y = Math.random() * (gameArea.clientHeight - objectWidth);
+    powerUp.style.left = Math.random() * (gameArea.clientWidth - 60) + 'px';
+    powerUp.style.top = Math.random() * (gameArea.clientHeight - 60) + 'px';
     powerUp.style.left = x + 'px';
     powerUp.style.top = y + 'px';
 
