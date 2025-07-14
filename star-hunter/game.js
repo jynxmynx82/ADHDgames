@@ -9,6 +9,7 @@ let gameState = {
     gameTimer: null,
     spawnTimer: null,
     moveTimer: null,
+    focusTimer: null,
     doubleScore: false,
     doubleScoreTimeout: null
 };
@@ -108,6 +109,7 @@ function startGame() {
     if (gameState.gameTimer) clearInterval(gameState.gameTimer);
     if (gameState.spawnTimer) clearTimeout(gameState.spawnTimer);
     if (gameState.moveTimer) cancelAnimationFrame(gameState.moveTimer);
+    if (gameState.focusTimer) clearInterval(gameState.focusTimer);
     if (gameState.doubleScoreTimeout) clearTimeout(gameState.doubleScoreTimeout);
 
     gameState.gameTimer = setInterval(() => {
@@ -118,6 +120,11 @@ function startGame() {
         }
     }, 1000);
 
+    gameState.focusTimer = setInterval(() => {
+        gameState.focusLevel = Math.max(0, gameState.focusLevel - 1);
+        updateDisplay();
+    }, 200);
+
     spawnObjects();
     startMovingObjects();
 }
@@ -126,7 +133,7 @@ function startGame() {
 // This function is now rewritten to check for success before leveling up.
 function nextLevelOrEnd() {
     // End the game if focus is gone, OR if the player clicked no stars last level (after level 1)
-    if (gameState.focusLevel <= 0 || (gameState.level > 1 && gameState.starsClickedThisLevel === 0)) {
+    if (gameState.focusLevel <= 0) {
         endGame();
         return;
     }
@@ -406,6 +413,7 @@ function endGame() {
     gameState.isPlaying = false;
     clearInterval(gameState.gameTimer);
     clearTimeout(gameState.spawnTimer);
+    clearInterval(gameState.focusTimer);
     if (gameState.moveTimer) cancelAnimationFrame(gameState.moveTimer);
     gameState.objects.forEach(obj => {
         if (obj.element.parentNode) obj.element.remove();
