@@ -191,9 +191,9 @@ function createTarget() {
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
     target.style.background = randomColor;
 
-    const objectWidth = 60;
-    const x = Math.random() * (gameArea.clientWidth - objectWidth);
-    const y = Math.random() * (gameArea.clientHeight - objectWidth);
+    const objectSize = 60;
+    const x = Math.random() * (gameArea.clientWidth - objectSize);
+    const y = Math.random() * (gameArea.clientHeight - objectSize);
     target.style.left = x + 'px';
     target.style.top = y + 'px';
 
@@ -238,9 +238,9 @@ function createDistractor() {
     }
     distractor.appendChild(inner);
 
-    const objectWidth = 60;
-    const x = Math.random() * (gameArea.clientWidth - objectWidth);
-    const y = Math.random() * (gameArea.clientHeight - objectWidth);
+    const objectSize = 60;
+    const x = Math.random() * (gameArea.clientWidth - objectSize);
+    const y = Math.random() * (gameArea.clientHeight - objectSize);
     distractor.style.left = x + 'px';
     distractor.style.top = y + 'px';
 
@@ -273,9 +273,9 @@ function createPowerUp() {
     powerUp.textContent = type.emoji;
     powerUp.dataset.effect = type.effect;
 
-    const objectWidth = 60;
-    const x = Math.random() * (gameArea.clientWidth - objectWidth);
-    const y = Math.random() * (gameArea.clientHeight - objectWidth);
+    const objectSize = 60;
+    const x = Math.random() * (gameArea.clientWidth - objectSize);
+    const y = Math.random() * (gameArea.clientHeight - objectSize);
     powerUp.style.left = x + 'px';
     powerUp.style.top = y + 'px';
 
@@ -314,13 +314,15 @@ function startMovingObjects() {
                     let y = parseFloat(obj.element.style.top);
                     let dx = parseFloat(obj.element.dataset.dx);
                     let dy = parseFloat(obj.element.dataset.dy);
-                    let objectWidth = obj.element.getBoundingClientRect().width;
+                    let objectRect = obj.element.getBoundingClientRect();
+                    let objectWidth = objectRect.width;
+                    let objectHeight = objectRect.height;
 
                     if (x + dx < 0 || x + dx > gameArea.clientWidth - objectWidth) {
                         dx = -dx;
                         obj.element.dataset.dx = dx;
                     }
-                    if (y + dy < 0 || y + dy > gameArea.clientHeight - objectWidth) {
+                    if (y + dy < 0 || y + dy > gameArea.clientHeight - objectHeight) {
                         dy = -dy;
                         obj.element.dataset.dy = dy;
                     }
