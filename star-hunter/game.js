@@ -233,7 +233,7 @@ function createDistractor() {
         inner.style.fontSize = '8vmin';
     } else {
         inner.textContent = '●';
-        inner.style.fontSize = '8vmin';
+        inner.style.fontSize = '2rem';
         inner.style.color = '#222';
     }
     distractor.appendChild(inner);
