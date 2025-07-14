@@ -132,7 +132,7 @@ function startGame() {
 // --- (CHANGE START) ---
 // This function is now rewritten to check for success before leveling up.
 function nextLevelOrEnd() {
-    // End the game if focus is gone, OR if the player clicked no stars last level (after level 1)
+    // End the game if focus is gone
     if (gameState.focusLevel <= 0) {
         endGame();
         return;
@@ -150,6 +150,9 @@ function nextLevelOrEnd() {
     updateDisplay();
     if (gameState.doubleScoreTimeout) clearTimeout(gameState.doubleScoreTimeout);
     gameState.doubleScore = false;
+
+    // Refill a portion of the clarity meter at the start of the next level
+    gameState.focusLevel = Math.min(100, gameState.focusLevel + 20);
 }
 // --- (CHANGE END) ---
 
@@ -348,7 +351,7 @@ function startMovingObjects() {
 function handleTargetClick(target) {
     let points = gameState.doubleScore ? 20 : 10;
     gameState.score += points;
-    gameState.focusLevel = Math.min(100, gameState.focusLevel + 5);
+    gameState.focusLevel = Math.min(100, gameState.focusLevel + 2); // Small boost for clicking a star
     gameState.starsClickedThisLevel++; // --- (CHANGE) --- Increment the counter
     playWhistle();
     target.classList.add('celebration');
@@ -407,6 +410,12 @@ function updateDisplay() {
     levelElement.textContent = gameState.level;
     timeElement.textContent = gameState.timeLeft;
     focusFill.style.width = gameState.focusLevel + '%';
+
+    if (gameState.focusLevel >= 100) {
+        focusFill.classList.add('full');
+    } else {
+        focusFill.classList.remove('full');
+    }
 }
 
 function endGame() {

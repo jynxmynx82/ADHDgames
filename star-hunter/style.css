@@ -74,7 +74,19 @@ body {
     height: 100%;
     background-color: #4ecdc4;
     border-radius: 8px;
-    transition: width 0.3s ease;
+    transition: width 0.3s ease, background 0.3s ease;
+}
+
+#focusFill.full {
+    background: linear-gradient(90deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff);
+    background-size: 200% 200%;
+    animation: rainbow 2s ease infinite;
+}
+
+@keyframes rainbow {
+    0%{background-position:0% 50%}
+    50%{background-position:100% 50%}
+    100%{background-position:0% 50%}
 }
 
 /* Feedback & Banners - Positioned in the center */
