@@ -230,10 +230,10 @@ function createDistractor() {
     if (Math.random() < 0.3) {
         const randomShape = funDistractorShapes[Math.floor(Math.random() * funDistractorShapes.length)];
         inner.textContent = randomShape;
-        inner.style.fontSize = '2.2rem';
+        inner.style.fontSize = '8vmin';
     } else {
         inner.textContent = '●';
-        inner.style.fontSize = '2rem';
+        inner.style.fontSize = '8vmin';
         inner.style.color = '#222';
     }
     distractor.appendChild(inner);
